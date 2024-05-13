@@ -95,6 +95,28 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
+        @media screen and (max-width: 600px) {
+            form {
+                width: 90%;
+                padding: 30px 20px;
+            }
+
+            input {
+                height: 40px;
+                font-size: 14px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+
+            .radio-label {
+                font-size: 14px;
+            }
+        }
+
+
     </style>
 
     <div class="background">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\fireEvent;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class RegistrationController extends Controller
 
         User::create($validatedData);
 
-        return redirect('/');
+        return redirect('/login');
     }
 
     public function showLoginForm()
@@ -50,4 +51,35 @@ class RegistrationController extends Controller
 
         return redirect()->back()->withErrors(['email' => 'Invalid credentials']);
     }
+
+    public function logout(){
+        session()->flush();
+        Auth::logout();
+        return redirect('/login');
+    }
+
+    public function showProfileForm(){
+        $userId = Auth::id();
+        $userName = Auth::user()->name;
+
+        $user = User::where('id', $userId)->first();
+
+        return view('auth.profile',compact('userId','userName','user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $validatedData = $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email,' . Auth::id(), // Unique validation excluding current user
+            'password' => 'required',
+            'rank' => 'required',
+        ]);
+
+        $user = User::find(Auth::id());
+        $user->update($validatedData);
+
+        return redirect()->route('home')->with('success', 'Profile Updated Successfully!');
+    }
+
 }

@@ -1,51 +1,23 @@
 @extends('layout.layout')
 
+<style>
+    body{
+        background-image: radial-gradient(circle at center center, transparent 0%,rgb(0,0,0) 85%),linear-gradient(78deg, rgba(192, 192, 192,0.05) 0%, rgba(192, 192, 192,0.05) 50%,rgba(60, 60, 60,0.05) 50%, rgba(60, 60, 60,0.05) 100%),linear-gradient(227deg, rgba(97, 97, 97,0.05) 0%, rgba(97, 97, 97,0.05) 50%,rgba(52, 52, 52,0.05) 50%, rgba(52, 52, 52,0.05) 100%),linear-gradient(240deg, rgba(98, 98, 98,0.05) 0%, rgba(98, 98, 98,0.05) 50%,rgba(249, 249, 249,0.05) 50%, rgba(249, 249, 249,0.05) 100%),linear-gradient(187deg, rgba(1, 1, 1,0.05) 0%, rgba(1, 1, 1,0.05) 50%,rgba(202, 202, 202,0.05) 50%, rgba(202, 202, 202,0.05) 100%),linear-gradient(101deg, rgba(61, 61, 61,0.05) 0%, rgba(61, 61, 61,0.05) 50%,rgba(254, 254, 254,0.05) 50%, rgba(254, 254, 254,0.05) 100%),linear-gradient(176deg, rgba(237, 237, 237,0.05) 0%, rgba(237, 237, 237,0.05) 50%,rgba(147, 147, 147,0.05) 50%, rgba(147, 147, 147,0.05) 100%),linear-gradient(304deg, rgba(183, 183, 183,0.05) 0%, rgba(183, 183, 183,0.05) 50%,rgba(57, 57, 57,0.05) 50%, rgba(57, 57, 57,0.05) 100%),radial-gradient(circle at center center, hsl(351,4%,12%),hsl(351,4%,12%));
+    }
+</style>
+
 @section('content')
+    @include('home.navbar')
 
     <style media="screen">
-        body {
-            background-color: #080710;
-            font-family: 'Poppins', sans-serif;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-        }
-
-        .background {
-            width: 430px;
-            height: 520px;
-            position: absolute;
-            transform: translate(-50%,-50%);
-            left: 50%;
-            top: 50%;
-        }
-
-        .background .shape {
-            height: 200px;
-            width: 200px;
-            position: absolute;
-            border-radius: 50%;
-        }
-
-        .shape:first-child {
-            background: linear-gradient(#1845ad, #23a2f6);
-            left: -80px;
-            top: -80px;
-        }
-
-        .shape:last-child {
-            background: linear-gradient(to right, #ff512f, #f09819);
-            right: -30px;
-            bottom: -80px;
-        }
 
         form {
-            height: 520px;
+            height: 480px;
             width: 400px;
             background-color: rgba(255,255,255,0.13);
             position: absolute;
             transform: translate(-50%,-50%);
-            top: 50%;
+            top: 57%;
             left: 50%;
             border-radius: 10px;
             backdrop-filter: blur(10px);
@@ -55,6 +27,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: white;
         }
 
         form h3 {
@@ -188,7 +161,6 @@
             }
         }
 
-
     </style>
 
     <div class="background">
@@ -196,56 +168,61 @@
         <div class="shape"></div>
     </div>
 
-    <form action="{{ route('register.submit') }}" method="post">
+    <form action="{{ route('profile.update') }}" method="post">
         @csrf
-        <h3>Register Here</h3>
+        <h3>Profile</h3>
 
         <div class="form-group">
-            <input type="text"  name="name" placeholder="Enter your name">
+            <input type="text"  name="name" value="{{ $user->name }}">
             @error('name')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="form-group">
-            <input type="email"  id="email" name="email" placeholder="Enter your email">
+            <input type="email"  id="email" name="email"  value="{{ $user->email }}">
             @error('email')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="form-group">
-            <input type="password"  id="password" name="password" placeholder="Enter your password">
+            <input type="password"  id="password" name="password" value="{{ $user->password }}">
             @error('password')
             <div class="text-danger">{{ $message }}</div>
             @enderror
         </div>
 
-        <div class="radio-group"><label class="radio-label">
-                <input type="radio" name="rank" value="consultant" class="radio-input">
+        <div class="radio-group">
+            <label class="radio-label">
+                <input type="radio" name="rank" value="consultant" class="radio-input"
+                       @if($user->rank === 'consultant') checked @endif>
                 <span class="radio-custom"></span>
                 Consultant
             </label>
             <label class="radio-label">
-                <input type="radio" name="rank" value="responsable" class="radio-input">
+                <input type="radio" name="rank" value="responsable" class="radio-input"
+                       @if($user->rank === 'responsable') checked @endif>
                 <span class="radio-custom"></span>
                 Responsable
             </label>
             <label class="radio-label">
-                <input type="radio" name="rank" value="manager" class="radio-input">
+                <input type="radio" name="rank" value="manager" class="radio-input"
+                       @if($user->rank === 'manager') checked @endif>
                 <span class="radio-custom"></span>
                 Manager
             </label>
             <label class="radio-label">
-                <input type="radio" name="rank" value="directeur" class="radio-input">
+                <input type="radio" name="rank" value="directeur" class="radio-input"
+                       @if($user->rank === 'directeur') checked @endif>
                 <span class="radio-custom"></span>
                 Directeur
             </label>
-
+            <div class="form-group">
+                <label for="prevRank">Previous Rank:</label>
+                <input type="text" id="prevRank" name="prevRank" value="{{ $user->rank }}" readonly>
+            </div>
         </div>
 
-        <button type="submit">Register</button>
-        <a href="{{ route("login") }}">Already have an account? Login</a>
-    </form>
-
+        <button type="submit">update</button>
 @endsection
