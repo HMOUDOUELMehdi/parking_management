@@ -71,7 +71,7 @@ class RegistrationController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . Auth::id(), // Unique validation excluding current user
+            'email' => 'required|email|unique:users,email,' . Auth::id(),
             'password' => 'required',
             'rank' => 'required',
         ]);
@@ -79,7 +79,8 @@ class RegistrationController extends Controller
         $user = User::find(Auth::id());
         $user->update($validatedData);
 
-        return redirect()->route('home')->with('success', 'Profile Updated Successfully!');
+        return redirect()->route('home')
+            ->with('success', 'Profile Updated Successfully!');
     }
 
 }

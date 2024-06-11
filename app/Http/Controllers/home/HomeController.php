@@ -21,29 +21,24 @@ class HomeController extends Controller
         $userName = Auth::user()->name;
         $how_many_reservations = Reservation::where('user_id', $userId)->count();
         session()->put('how_many_reservations', $how_many_reservations);
-
-
         $days = Days::all();
-
         $places = Places::where('day_id', $dayId)
             ->paginate(25);
-
         $reservations = Reservation::where('day_id', $dayId)->get();
-
         $users = User::all()->sortByDesc('created_at');
-
-        return view('home.home', compact('userId', 'userName', 'days', 'places', 'reservations', 'users'));
+        return view('home.home', compact('userId',
+            'userName', 'days', 'places', 'reservations', 'users'));
     }
 
     public function reservationPage(Request $request)
     {
         $userId = Auth::id();
-        $place_id = $request->input('place_id');
+        $placeId = $request->input('place_id');
         $dayId = session()->get('dayId');
         $rank = Auth::user()->rank;
-        $how_many_reservations = session()->get('how_many_reservations');
+        $howManyReservations = session()->get('how_many_reservations');
 
-        if ($place_id !== null) {
+        if ($placeId !== null) {
             $existingReservationOnDay = Reservation::where('user_id', $userId)
                 ->where('day_id', $dayId)
                 ->exists();
@@ -52,61 +47,138 @@ class HomeController extends Controller
                 $reservationStatus = 'You already have a reservation for this day.';
                 $type = 'info';
             } else {
-                $existingReservation = Reservation::where('user_id', $userId)
-                    ->where('place_id', $place_id)
-                    ->exists();
+                $existingReservation = Reservation::where('place_id', $placeId)
+                    ->where('day_id', $dayId)
+                    ->first();
 
                 if ($rank == 'directeur') {
-                    try {
-                        $existingReservation = Reservation::where('day_id', $dayId)
-                            ->where('place_id', $place_id)
-                            ->first();
-
-                        $reservedCount = Reservation::where('day_id', $dayId)->count();
-                        $totalPlaces = Places::count();
-
-                        if ($existingReservation && $reservedCount >= $totalPlaces) {
-                            if ($existingReservation->user_id != $userId) {
+                    $reservedCount = Reservation::where('day_id', $dayId)->count();
+                    if ($reservedCount >=50) {
+                        try {
+                            if ($existingReservation) {
                                 $removedUserEmail = User::find($existingReservation->user_id)->email;
                                 $directorName = Auth::user()->name;
-                                $message = "We regret to inform you that your reservation for this place has been overridden by Director $directorName.";
+                                $message = "We regret to inform you that your reservation for this
+                                 place has been overridden by Director $directorName.";
                                 $subject = "Your Reservation Has Been Overridden by Director $directorName";
-                                $this->sendEmail($removedUserEmail,$message,$subject);
+                                $this->sendEmail($removedUserEmail, $message, $subject);
+
+                                $existingReservation->delete();
                             }
 
-                            $existingReservation->user_id = $userId;
-                            $existingReservation->save();
-                            
+                            // Create new reservation
+                            $reservation = new Reservation();
+                            $reservation->user_id = $userId;
+                            $reservation->day_id = $dayId;
+                            $reservation->place_id = $placeId;
+                            $reservation->save();
+
+                            // Update place status
+                            $place = Places::find($placeId);
+                            $place->reserved = true;
+                            $place->save();
+
                             $reservationStatus = 'success';
                             $type = 'success';
-                        } else {
-                            $reservationStatus = 'There are empty places for this day. Cannot override reservations.';
+                        }
+                        catch (\Exception $e) {
+                            $reservationStatus = 'error' . $e->getMessage();
                             $type = 'error';
                         }
+                    }else{
+                        if (!$existingReservation) {
+                            // Create new reservation
+                            $reservation = new Reservation();
+                            $reservation->user_id = $userId;
+                            $reservation->day_id = $dayId;
+                            $reservation->place_id = $placeId;
+                            $reservation->save();
 
-                        $place = Places::find($place_id);
-                        $place->reserved = true;
-                        $place->save();
+                            // Update place status
+                            $place = Places::find($placeId);
+                            $place->reserved = true;
+                            $place->save();
 
+                            $reservationStatus = 'success';
+                            $type = 'success';
+                        }else{
+                            $reservationStatus = 'error';
+                            $type = 'error';
+                        }
+                    }
 
-                    } catch (\Exception $e) {
-                        $reservationStatus = 'error' . $e->getMessage();
-                        $type = 'error';
+                }
+                
+                elseif ($rank == 'manager' || $rank == 'responsable') {
+//                dd(User::find($existingReservation->user_id)->rank);
+                    $reservedCount = Reservation::where('day_id', $dayId)->count();
+                    if ($reservedCount >=50) {
+                        try {
+                            if ($existingReservation) {
+                                if (User::find($existingReservation->user_id)->rank != 'directeur'){
+                                    $removedUserEmail = User::find($existingReservation->user_id)->email;
+                                    $message = "We regret to inform you that your reservation for this place has been overridden by Director.";
+                                    $subject = "Your Reservation Has Been Overridden by Director ";
+                                    $this->sendEmail($removedUserEmail, $message, $subject);
+                                }
+                                $existingReservation->delete();
+                            }
+                            // Create new reservation
+                            $reservation = new Reservation();
+                            $reservation->user_id = $userId;
+                            $reservation->day_id = $dayId;
+                            $reservation->place_id = $placeId;
+                            $reservation->save();
+
+                            // Update place status
+                            $place = Places::find($placeId);
+                            $place->reserved = true;
+                            $place->save();
+
+                            $reservationStatus = 'success';
+                            $type = 'success';
+                        }
+                        catch (\Exception $e) {
+                            $reservationStatus = 'error' . $e->getMessage();
+                            $type = 'error';
+                        }
+                    }else{
+                        if (!$existingReservation) {
+                            // Create new reservation
+                            $reservation = new Reservation();
+                            $reservation->user_id = $userId;
+                            $reservation->day_id = $dayId;
+                            $reservation->place_id = $placeId;
+                            $reservation->save();
+
+                            // Update place status
+                            $place = Places::find($placeId);
+                            $place->reserved = true;
+                            $place->save();
+
+                            $reservationStatus = 'success';
+                            $type = 'success';
+                        }else{
+                            $reservationStatus = 'error';
+                            $type = 'error';
+                        }
                     }
                 }
 
-                elseif (($rank == 'consultant' && $how_many_reservations >= 1) || (($rank == 'manager' || $rank == 'responsable') && $how_many_reservations >= 3)) {
+                elseif (($rank == 'consultant' && $howManyReservations >= 1) || (($rank == 'manager' || $rank == 'responsable') && $howManyReservations >= 3)) {
                     $reservationStatus = ($rank == 'consultant') ? 'Consultants are allowed to reserve only once per week.' : 'Managers and Responsables are allowed to reserve three times per week.';
                     $type = 'info';
-                } elseif (!$existingReservation) {
+//                    exit();
+                }
+                elseif (!$existingReservation) {
                     try {
                         $reservation = new Reservation();
                         $reservation->user_id = $userId;
                         $reservation->day_id = $dayId;
-                        $reservation->place_id = $place_id;
+                        $reservation->place_id = $placeId;
                         $reservation->save();
 
-                        $place = Places::find($place_id);
+                        $place = Places::find($placeId);
                         $place->reserved = true;
                         $place->save();
 
@@ -116,18 +188,20 @@ class HomeController extends Controller
                         $reservationStatus = 'error' . $e->getMessage();
                         $type = 'error';
                     }
-                } else {
-                    $reservationStatus = 'this place already reserved for this day.';
+                }
+                else {
+                    $reservationStatus = 'This place is already reserved for this day.';
                     $type = 'error';
                 }
             }
+
             $reservedCount = Reservation::where('day_id', $dayId)->count();
             if ($reservedCount >= 50) {
                 $users = User::all();
                 foreach ($users as $user) {
                     $dayName = Days::find($dayId)->name;
                     $subject = "All Places Reserved for $dayName";
-                    $this->sendEmail($user->email, "All Places Reserved for $dayName" , $subject);
+                    $this->sendEmail($user->email, "All Places Reserved for $dayName", $subject);
                 }
                 $reservationStatus = 'All places for this day are already reserved.';
                 $type = 'info';
@@ -141,44 +215,29 @@ class HomeController extends Controller
     }
 
     public function cancelReservation(Request $request)
-    {
-        $userId = Auth::id();
-        $place_id = $request->input('place_id');
-        $dayId = session()->get('dayId');
+        {
+            $userId = Auth::id();
+            $place_id = $request->input('place_id');
+            $dayId = session()->get('dayId');
 
-        if ($place_id !== null) {
-            $reservation = Reservation::where('user_id', $userId)
-                ->where('place_id', $place_id)
-                ->where('day_id', $dayId)
-                ->first();
+            if ($place_id !== null) {
+                $reservation = Reservation::where('user_id', $userId)
+                    ->where('place_id', $place_id)
+                    ->where('day_id', $dayId)
+                    ->first();
 
-            if ($reservation) {
-                try {
-                    // Delete the reservation
-                    $reservation->delete();
-
-                    // Update the place status
-                    $place = Places::find($place_id);
-                    $place->reserved = false;
-                    $place->save();
-
-                    $reservationStatus = 'Reservation canceled successfully.';
-                    $type = 'success';
-                } catch (\Exception $e) {
-                    $reservationStatus = 'Error canceling reservation: ' . $e->getMessage();
-                    $type = 'error';
+                if ($reservation) {
+                    try {
+                        $reservation->delete();
+                        $place = Places::find($place_id);
+                        $place->reserved = false;
+                        $place->save();
+                    } catch (\Exception $e) {
+                    }
                 }
-            } else {
-                $reservationStatus = 'No reservation found for this place on this day.';
-                $type = 'error';
             }
-        } else {
-            $reservationStatus = 'Please select a place to cancel reservation.';
-            $type = 'info';
+            return redirect()->route('home');
         }
-
-        return redirect()->route('home')->with('flash', ['type' => $type, 'message' => $reservationStatus]);
-    }
 
     public function sendEmail($email,$message,$subject)
     {

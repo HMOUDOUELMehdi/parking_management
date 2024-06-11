@@ -1,5 +1,6 @@
 <style>
     .place {
+        position: relative;
         width: calc(100% / 5); /* Adjust the number 5 based on the number of places you want to display per row */
         /*max-width: calc(100% / 5); !* Ensure each place doesn't exceed this width *!*/
         height: calc(100vh / 5); /* Adjust the height based on the number of rows you want */
@@ -24,10 +25,10 @@
         justify-content: center;
     }
 
-    input{
+    #reserve{
         width: 100%;
         position: relative;
-        top: 30%;
+        top: 37%;
     }
     .user-name {
         max-height: 50px;
@@ -38,7 +39,7 @@
         color: transparent;
     }
 
-    button {
+    #btn1{
         position: absolute;
         top: -2%;
         left: 80%;
@@ -54,6 +55,20 @@
         transition: background-color 0.3s ease;
     }
 
+    #canceled{
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(
+            #1845ad,
+            #23a2f6
+        );
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
     @media screen and (max-width: 768px) {
         .place {
             width: calc(100% / 2); /* Adjust the number 2 for smaller screens */
@@ -66,7 +81,7 @@
             left: -14%;
             top: -1%;
         }
-        button{
+        #btn1{
             margin-left: -30px;
         }
     }
@@ -78,9 +93,9 @@
         .day{
             font-size: 15px;
         }
-        input{
+        #reserve{
             position: relative;
-            left: 30%;
+            left: 35%;
             width: auto;
         }
     }
@@ -110,8 +125,11 @@
                             unknown
                         @endif
                     </div>
+                    @if($user == $userName)
+                        <input id="canceled" type="button" value="cancel">
+                    @endif
                 @endif
-                <input type="radio" name="place_id" value="{{ $place->id }}">
+                <input id="reserve" type="radio" name="place_id" value="{{ $place->id }}">
             </div>
             @php
                 $counter++;
@@ -121,6 +139,46 @@
             @endphp
         @endforeach
         <div >{!! $places->links() !!}</div>
-        <button type="submit">Book Place</button>
+        <button id="btn1" type="submit">Book Place</button>
     </form>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    $(document).ready(function() {
+        // Capture click event on cancel button
+        $('.place').on('click', 'input[type="button"]', function() {
+            // Get the ID of the place
+            var placeId = $(this).closest('.place').data('id');
+
+            // Make an AJAX request
+            $.ajax({
+                url: '{{ route('home.cancelReservation') }}', // URL of your controller method
+                type: 'POST',
+                data: {
+                    '_token': '{{ csrf_token() }}', // CSRF token
+                    'place_id': placeId // Place ID to cancel reservation for
+                },
+                success: function(response) {
+                    // Handle success response
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Reservation canceled successfully.'
+                        }).then(function() {
+                            location.reload(); // Reload the page to reflect changes
+                        });
+                },
+                error: function(xhr) {
+                    // Handle error response
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while canceling the reservation.'
+                    });
+                }
+            });
+        });
+    });
+</script>
+

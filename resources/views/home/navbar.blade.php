@@ -294,13 +294,17 @@
             <div class="shape2"></div>
             <div class="shape3"></div>
             <div class="shape4"></div>
-        <a class="brand" href="{{route('home')}}" style="font-size: 35px; cursor: pointer;z-index: 1">FORTIWAVE_PARKING</a>
+        <a class="brand" href="{{route('home')}}" style="font-size: 35px; cursor: pointer;z-index: 1">
+            FORTIWAVE_PARKING</a>
         <input type="checkbox" name="checkbox" class="checkbox">
         <label id="label" for="checkbox"></label>
         <ul class="menu">
-            <li class="nav-link" style="display: flex; color: #ff512f">Welcome, <div style="color: #23a2f6" >{{ $userName }}</div> </li>
-            <li><a class="nav-link" href="{{route('profile')}}"  >Profile</a></li>
-            <li><a class="nav-link" href="{{route('logout')}}"  >Log Out</a></li>
+            <li class="nav-link" style="display: flex; color: #ff512f">Welcome, <div style="color: #23a2f6" >
+                    {{ $userName }}</div> </li>
+            <li><a class="nav-link" href="{{route('profile')}}"  >
+                    Profile</a></li>
+            <li><a class="nav-link" href="{{route('logout')}}"  >
+                    Log Out</a></li>
         </ul>
     </nav>
 </header>
